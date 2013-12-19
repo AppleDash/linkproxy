@@ -17,7 +17,7 @@ class HandlerThread(threading.Thread):
                 break
             raw = raw.strip()
             ln = Line.parse(raw)
-            self.proto.on_read_line(ln, raw)
+            self.proto.on_line_from_server(ln, raw)
 
     def stop(self):
         self.running = False
@@ -25,7 +25,9 @@ class HandlerThread(threading.Thread):
 
 class LinkProxy():
     protodict = {
-        'unreal': ProtocolUnreal
+        'unreal': ProtocolUnreal,
+        'raw': Protocol,
+        'inspircd': ProtocolInspircd
     }
 
     def __init__(self):
@@ -73,7 +75,7 @@ class LinkProxy():
         self.t2.start()
 
 lp = LinkProxy()
-if lp.open("unreal", 6668, "unreal", 6667):
+if lp.open("inspircd", 6668, "inspircd", 6667):
     while 1:
         try:
             pass
