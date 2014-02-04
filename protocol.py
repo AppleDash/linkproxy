@@ -10,9 +10,13 @@ class Protocol():
 
     def on_line_from_server(self, ln, raw):
         print("<- [%s] [RAW] %s" % (self.tag, raw))
+        #if self.tag == "Server1":
+        #    print("<- " + raw)
         self.on_recv_unknown(raw)
 
     def on_write_line(self, raw):
+        #if self.tag == "Server1":
+        #    print("-> " + raw)
         print("-> [%s] [RAW] %s" % (self.tag, raw))
 
     def send_to_other(self, ln):
@@ -35,10 +39,10 @@ class Protocol():
         pass
 
     #:SID EUID nick 1 ts modes ident vhost ip uid realhost * :Xena
-    def on_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos):
+    def on_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos, additional):
         pass
 
-    def send_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos):
+    def send_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos, additional):
         pass
 
 
@@ -60,6 +64,7 @@ class ProtocolInspircd(Protocol):
             self.on_capab(ln, flag, params)
         elif ln.command == "UID":
             #:${SID} UID ${UID} TS Nickname realhost vhost ident ip ts modes :gecos
+            #:SID 'UID' UID TS Nick realhost vhost ident ip ts +os +ACKLOQXacdkloqtx :appledash
             sid = ln.hostmask.host
             uid = ln.params[0]
             ts = ln.params[1]
@@ -68,9 +73,15 @@ class ProtocolInspircd(Protocol):
             vhost = ln.params[4]
             ident = ln.params[5]
             ip = ln.params[6]
-            modes = ln.params[7]
-            gecos = ln.params[8]
-            self.on_euid(sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos)
+            ts = ln.params[7]
+            modes = ln.params[8]
+            gecos = ln.params[9]
+            #print(str(locals()))
+            snomask = None
+            if "s" in modes:
+                snomask = ln.params[9]
+                gecos = ln.params[10]
+            self.on_euid(sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos, [snomask])
         else:
             self.on_recv_unknown(raw)
 
@@ -83,12 +94,13 @@ class ProtocolInspircd(Protocol):
             out += " :%s" % (params,)
         self.send_to_server(out)
 
+    def on_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos, additional):
+        self.other.send_euid(sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos, additional)
 
-    def on_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos):
-        self.other.send_euid(sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos)
-
-    def send_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos):
+    def send_euid(self, sid, nick, ts, modes, ident, vhost, ip, uid, realhost, gecos, additional):
         str = ":%s UID %s %s %s %s %s %s %s %s %s :%s" % (sid, uid, ts, nick, realhost, vhost, ident, ip, ts, modes, gecos)
+        if additional[0] is not None:
+            str = ":%s UID %s %s %s %s %s %s %s %s %s %s :%s" % (sid, uid, ts, nick, realhost, vhost, ident, ip, ts, modes, additional[0], gecos)
         self.send_to_server(str)
 
 
