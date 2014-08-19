@@ -1,0 +1,30 @@
+---
+name: Tetra
+description: Tetra Extended Services
+keywords: ''
+type: Default
+documentation: Connect to port 6667 on the host after you deploy this.
+images:
+- name: xena_tetra-ircd_latest
+  source: xena/tetra-ircd:latest
+  category: Ircd
+  type: Default
+  expose:
+  - '6667'
+  ports:
+  - host_port: '6667'
+    container_port: '6667'
+    proto: TCP
+- name: xena_etcd-minimal
+  source: xena/etcd-minimal:latest
+  category: etcd
+  type: Default
+- name: xena_tetra_1
+  source: xena/tetra:latest
+  category: Tetra
+  type: Default
+  links:
+  - service: xena_tetra-ircd_latest
+    alias: ircd
+  - service: xena_etcd-minimal
+    alias: etcd
